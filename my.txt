@@ -1,0 +1,31 @@
+1、$(...).modal is not a function
+	原因：
+		1、重复引用文件可能会导致该问题
+		2、bootstrap依赖jquery
+		3、浏览器缓存
+	解决：
+		1、只需要在首页引入一次jquery、bootstrap即可
+		2、jquery.js需要在bootsrap之前引入
+		3、浏览器-选项-隐私与安全-清除历史记录
+
+2、地址管理的搜索
+	要求根据顾客id查询地址信息
+	思路：
+		1、获取所有顾客id
+			1）写一个函数，访问顾客接口的findAll，拿到data，使用forEach遍历出id
+			2）将id放在下拉框的option中，而option要追加到搜索的select下
+			3）在页面加载的时候执行该函数(如同loadData()或者initData())
+		2、根据顾客id查询
+			1）使用事件代理，点击选中每一个option时，获取当前值，即id
+			2）把该id作为参数传给地址管理中的findByCustomerId接口
+			3）查询到数据并追加到原有的table上(追加之前先清空原有的数据)
+
+3、地址管理添加数据
+	需要顾客id
+	1）写一个函数，访问顾客接口的findAll，拿到data，使用forEach遍历出id
+	2）将id放在下拉框的option中，而option要追加到模态框的select下
+
+
+4、点击修改按钮的时候，可以将获取到的id设置为全局变量，在点击模态框的保存按钮的时候(保存或者修改)，根据该id来判断即可，有id即修改，没id即新增
+	
+	注意：在if()中判断完id后，要将该id置为空，否则，点击修改并提交后，再次点击添加的时候，还是修改

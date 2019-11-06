@@ -1,0 +1,408 @@
+<div id="address">
+	<!-- 按钮 -->
+	<div class="addressTop row">
+		<div class="btns col-6">
+			<button class="btn btn-info btn-sm" id="btn_add">添加</button>
+			<button class="btn btn-danger btn-sm" id="btn_batchDel">批量删除</button>
+		</div>
+		<div class="col-3 text-right">
+			<button class="btn btn-primary" id="btn_findAll">还原</button>
+		</div>
+		<div class="serach col-3">
+			<form>
+				<select name="" id="serach_customerId" class="form-control">
+					<option value="" style="display: none;">请选择顾客id</option>
+				</select>
+			</form>
+		</div>
+	</div>
+	<!-- 数据表格 -->
+	<div class="table_content">
+		<table class="table table-sm table-bordered table-hover text-center">
+		  <thead>
+		    <tr>
+		      <th scope="col"><input type="checkbox"></th>
+		      <th scope="col">省份</th>
+		      <th scope="col">市</th>
+		      <th scope="col">地区</th>
+		      <th scope="col">地址</th>
+		      <th scope="col">电话</th>
+		      <th scope="col">顾客id</th>
+		      <th scope="col">操作</th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		    
+		  </tbody>
+		</table>
+	</div>
+	<!-- 模态框 -->
+	<div class="modal fade" id="addressModal">
+	  <div class="modal-dialog modal-lg">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title">添加地址</h5>
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">
+	        <form>
+			  <div class="form-group row">
+			    <div class="col-2 text-right">
+			    	<label for="input_realname">省份</label>
+			    </div>
+			    <div class="col-10">
+			    	<input type="text" class="form-control" id="input_province" placeholder="请输入省份">
+			    </div>
+			  </div>
+			  <div class="form-group row">
+			  	<div class="col-2 text-right">
+			  		 <label for="input_city">城市</label>
+			  	</div>
+			    <div class="col-10">
+			    	<input type="text" class="form-control" id="input_city" placeholder="请输入城市">
+			    </div>
+			  </div>
+			  <div class="form-group row">
+			  	<di class="col-2 text-right">
+			  		<label for="input_area">地区</label>
+			  	</di>
+			  	<div class="col-10">
+			  		<input type="text" class="form-control" id="input_area" placeholder="请输入地区">
+			  	</div>
+			  </div>
+			  <div class="form-group row">
+			  	<div class="col-2 text-right">
+			  		<label for="input_address">地址</label>
+			  	</div>
+			  	<div class="col-10">
+			  		<input type="text" class="form-control" id="input_address" placeholder="请输入地址">
+			  	</div>
+			  </div>
+			  <div class="form-group row">
+			  	<div class="col-2 text-right">
+			  		<label for="input_telephone">电话</label>
+			  	</div>
+			  	<div class="col-10">
+			  		<input type="text" class="form-control" id="input_telephone" placeholder="请输入电话">
+			  	</div>
+			  </div>
+			  <div class="form-group row">
+			  	<div class="col-2 text-right">
+			  		<label for="input_customerId">顾客id</label>
+			  	</div>
+			  	<div class="col-10">
+			  		<select name="" id="input_customerId" class="form-control">
+			  			
+			  		</select>
+			  	</div>
+			  </div>
+			</form>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-secondary" id="btn_none">取消</button>
+	        <button type="button" class="btn btn-primary" id="addAddress">保存</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+</div>
+<script>
+	var baseURL = 'http://134.175.100.63:6677';
+	// 该id是点击修改按钮时获取的id，设置为全局变量
+	var EditId;
+	// 查询所有数据
+	function loadData(){
+		// 在每次追加数据之前，先清空table
+		$('.table tbody').empty();
+		var url_findAll = baseURL+'/address/findAll';
+		$.get(url_findAll,function(result){
+			result.data.forEach(function(item){
+				var newTr = $(`
+					<tr>
+				      <td><input type="checkbox" value="`+item.id+`"></td>
+				      <td>`+item.province+`</td>
+				      <td>`+item.city+`</td>
+				      <td>`+item.area+`</td>
+				      <td>`+item.address+`</td>
+				      <td>`+item.telephone+`</td>
+				      <td>`+item.customerId+`</td>
+				      <td>
+						<i class='iconfont icon-edit' id='edit'></i>
+						<i class='iconfont icon-shanchu' id='del'></i>
+				      </td>
+				    </tr>
+				`);
+				// 将生成的newTr追加到tbody上
+				$('.table tbody').append(newTr);
+			})
+		});
+	}
+	// 关闭提示框，在点击提示框中的x才调用该函数
+	function closeAlert(){
+		$(this).parents('.alert').remove();
+	}
+	// 查询所有顾客id，放入搜索下拉框中
+	// 在页面加载的时候执行该函数
+	function searchCustomerId(){
+		// 设置顾客的findAll请求地址
+		var url_findCustomerId = baseURL+'/customer/findAll';
+		$.get(url_findCustomerId,function(result){
+			// 将结果遍历，拿到id
+			result.data.forEach(function(item){
+				// 新创建节点，并追加到select中
+				/*
+				*第一个item.id放在value中，是为了根据顾客id查询的时候可以获取到此option的值
+				*第二个item.id放在option中间是为了显示
+				*/
+				var newOption = $(`
+					<option value="`+item.id+`">`+item.id+`</option>
+				`);
+				// 将顾客id追加到搜索下拉框中
+				$('#serach_customerId').append(newOption);
+			})
+		});
+	}
+	// 查询所有顾客id，放入模态框的下拉框中
+	// 在点击模态框显示的时候调用该函数
+	function addCustomerId(){
+		// 设置顾客的findAll请求地址
+		var url_findCustomerId = baseURL+'/customer/findAll';
+		$.get(url_findCustomerId,function(result){
+			// 将结果遍历，拿到id
+			result.data.forEach(function(item){
+				// 新创建节点，并追加到select中
+				/*
+				*第一个item.id放在value中，是为了根据顾客id查询的时候可以获取到此option的值
+				*第二个item.id放在option中间是为了显示
+				*/
+				var newOption = $(`
+					<option value="`+item.id+`">`+item.id+`</option>
+				`);
+				// 将顾客id追加到模态框的下拉框中
+				$('#input_customerId').append(newOption);
+			})
+		});
+	}
+
+	$(function(){
+		// 加载所有数据
+		loadData();
+		// 加载所有顾客id
+		searchCustomerId();
+		// 显示模态框
+		$('#btn_add').click(function(){
+			$('#addressModal').modal('show');
+			// 执行函数，获取所有顾客id
+			$('#input_customerId').empty();
+			addCustomerId();
+		})
+		// 关闭模态框
+		$('#btn_none').click(function(){
+			$('#addressModal').modal('hide');
+		})
+
+		// 监听模态框的关闭，清空模态框内容
+		$('#addressModal').on('hidden.bs.modal', function(e){
+		  $(this).find('form')[0].reset();
+		})
+
+		// 批量删除
+		$('#btn_batchDel').click(function(){
+			var url_batchDel = baseURL+'/address/batchDelete';
+			var ids = $(':checkbox:checked').map(function(index,item){
+				return $(item).val();
+			}).toArray();
+			var data = '';
+			for(index in ids){
+				if(index == 0){
+					data += 'ids='+ids[index]
+				}else{
+					data +='&ids='+ids[index]
+				}
+			}
+			$.post(url_batchDel,data,function(result){
+				console.log(result);
+				loadData();
+			})
+		})
+
+		// 添加或修改数据
+		$('#addAddress').click(function(){
+			var province = $('#input_province').val();
+			var city = $('#input_city').val();
+			var area = $('#input_area').val();
+			var address = $('#input_address').val();
+			var telephone = $('#input_telephone').val();
+			var customerId = $('#input_customerId').val();
+			if(EditId){
+					// id存在，即修改
+					var data = {
+						id:EditId,
+						province:province,
+						city:city,
+						area:area,
+						address:address,
+						telephone:telephone,
+						customerId:customerId
+					}
+					var url_editAddress = baseURL+'/address/saveOrUpdate';
+					$.post(url_editAddress,data,function(result){
+						console.log(result,'修改');
+						loadData();
+					});
+					// 将id置为空，否则点击修改后再次点击添加，还是修改
+					EditId = '';
+					$('#addressModal').modal('hide');	
+				}else{
+					// id不存在，即添加
+					var data = {
+						province:province,
+						city:city,
+						area:area,
+						address:address,
+						telephone:telephone,
+						customerId:customerId
+					}
+					var url_addAddress = baseURL+'/address/saveOrUpdate';
+					$.post(url_addAddress,data,function(result){
+						console.log(result);
+						loadData();
+					});
+					$('#addressModal').modal('hide');	
+				}
+		})
+		
+		// 删除与修改按钮
+		$('.table tbody').on('click','i',function(){
+			switch(this.id){
+				// 修改
+				case 'edit':
+					// 打开模态框
+				 	$('#addressModal').modal('show');
+				 	// 获取当前行的值并放入模态框（不能在此处就发送请求）
+					EditId = $(this).parents('tr').find('td').find('input').val();
+				 	var province = $(this).parents('tr').find('td:nth-child(2)').text();
+				 	var city = $(this).parents('tr').find('td:nth-child(3)').text();
+				 	var area = $(this).parents('tr').find('td:nth-child(4)').text();
+				 	var address = $(this).parents('tr').find('td:nth-child(5)').text();
+				 	var telephone = $(this).parents('tr').find('td:nth-child(6)').text();
+				 	var customerId = $(this).parents('tr').find('td:nth-child(7)').text();
+				 	$('#input_province').val(province);
+				 	$('#input_city').val(city);
+				 	$('#input_area').val(area);
+				 	$('#input_address').val(address);
+				 	$('#input_telephone').val(telephone);
+				 	$('#input_customerId').val(customerId);
+					break;
+				// 删除
+				case 'del':
+				 	var url_del = baseURL+'/address/deleteById';
+					var id = $(this).parents('tr').find('input[type=checkbox]').val();
+					var data = {
+						id:id
+					}
+					$.get(url_del,data,function(result){
+						if(result.status === 200){
+							loadData();
+							// 删除并刷新数据后，追加提示框
+							$(`
+								<div class="alert alert-info alert-dismissible" id='mySuccessAlert'>
+									<div>
+										删除成功
+									</div>
+									<button class="close" onclick="closeAlert.call(this)" id='btn_success'>
+										~
+									</button>
+								</div>
+							`).prependTo($('body'));
+							// 延时调用，2s后模拟点击提示框的关闭按钮
+							setTimeout(function(){
+								$('#btn_success').trigger('click');
+							},2000);
+						}else{
+							$(`
+								<div class="alert alert-info alert-dismissible" id='myWarnAlert'>
+									<div>
+										删除失败，接口异常
+									</div>
+									<button class="close" onclick="closeAlert.call(this)" id='btn_warn'>
+										！
+									</button>
+								</div>
+							`).prependTo($('body'));
+							setTimeout(function(){
+								$('#btn_warn').trigger('click')
+							},2000);
+						}
+					});
+					break;
+			}	
+		})	
+
+		// 根据顾客id查询地址信息
+		$('#serach_customerId').on('click','option',function(){
+			// console.log($(this).val());
+			// 将当前点击的option的值赋值给id
+			var id = $(this).val();
+			var url_searchAddress = baseURL+'/address/findByCustomerId';
+			var data = {
+				id:id
+			};
+			$.get(url_searchAddress,data,function(result){
+				// 根据顾客id查询地址信息时，需要将原先表格中的数据清空，再追加根据顾客id新查询到的数据
+				$('.table tbody').empty();
+				result.data.forEach(function(item){
+					var newSearchTr = $(`
+						<tr>
+					      <td><input type="checkbox" value="`+item.id+`"></td>
+					      <td>`+item.province+`</td>
+					      <td>`+item.city+`</td>
+					      <td>`+item.area+`</td>
+					      <td>`+item.address+`</td>
+					      <td>`+item.telephone+`</td>
+					      <td>`+item.customerId+`</td>
+					      <td>
+							<i class='iconfont icon-edit' id='edit'></i>
+							<i class='iconfont icon-shanchu' id='del'></i>
+					      </td>
+					    </tr>
+					`);
+					$('.table tbody').append(newSearchTr);
+				});
+			});
+		})
+
+		// 还原搜索
+		$('#btn_findAll').click(function(){
+			// 点击按钮重新加载数据
+			loadData();
+		});
+	});
+</script>
+
+<style>
+	.btns{
+		margin-bottom: 1em;
+	}
+	.btns button {
+		margin-right: 0.5em;
+	}
+	/*删除成功弹出框*/
+	#mySuccessAlert{
+		width: 200px;
+		position: absolute;
+		right: 5%;
+		top: 8.5%;
+		z-index: 100;
+	}
+	/*删除失败弹出框*/
+	#myWarnAlert{
+		width: 250px;
+		position: absolute;
+		right: 5%;
+		top: 8.5%;
+		z-index: 100;
+	}
+</style>

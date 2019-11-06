@@ -1,0 +1,332 @@
+<div id="customer">
+	<!-- 按钮 -->
+	<div class="btns">
+		<button class="btn btn-info btn-sm" id="btn_add">添加</button>
+		<button class="btn btn-danger btn-sm" id="btn_batchDel">批量删除</button>
+	</div>
+	<!-- 数据表格 -->
+	<div class="table_content">
+		<table class="table table-sm table-bordered table-hover text-center">
+		  <thead>
+		    <tr>
+		      <th scope="col"><input type="checkbox"></th>
+		      <th scope="col">姓名</th>
+		      <th scope="col">电话</th>
+		      <th scope="col">密码</th>
+		      <th scope="col">操作</th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		    
+		  </tbody>
+		</table>
+	</div>
+	
+	<!-- 模态框 -->
+	<div class="modal fade" id="customerModal">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="exampleModalLabel">添加顾客</h5>
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">
+	        <form>
+			  <div class="form-group" id="name_err">
+			    <label for="input_realname">姓名<span class="name_err" style="color: red;">请输入至少一位字母</span></label>
+			    <input type="text" class="form-control" id="input_realname" placeholder="请输入姓名">
+			  </div>
+			  <div class="form-group" id="telephone_err">
+			    <label for="input_telephone">电话<span class="telephone_err" style="color: red;">请输入9-11位数字</span></label>
+			    <input type="text" class="form-control" id="input_telephone" placeholder="请输入电话">
+			  </div>
+			  <div class="form-group" id="password_err">
+			    <label for="input_password">密码<span class="password_err" style="color: red;">请输入至少一位数字</span></label>
+			    <input type="password" class="form-control" id="input_password" placeholder="请输入密码">
+			  </div>
+			 
+			</form>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-secondary" id="btn_none">取消</button>
+	        <button type="button" class="btn btn-primary" id="addCustomer">保存</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+</div>
+
+<script>
+	var baseURL = 'http://134.175.100.63:6677';
+	// 该id是点击修改按钮时获取的id，设置为全局变量
+	var EditId;
+	// 查询所有数据
+	function loadData(){
+		// 在每次追加数据之前，先清空table
+		$('.table tbody').empty();
+		var url_findAll = baseURL+'/customer/findAll';
+		$.get(url_findAll,function(result){
+			result.data.forEach(function(item){
+				var newTr = $(`
+					<tr>
+				      <td><input type="checkbox" value="`+item.id+`"></td>
+				      <td>`+item.realname+`</td>
+				      <td>`+item.password+`</td>
+				      <td>`+item.telephone+`</td>
+				      <td>
+						<i class='iconfont icon-edit' id='edit'></i>
+						<i class='iconfont icon-shanchu' id='del'></i>
+				      </td>
+				    </tr>
+				`);
+				// 将生成的newTr追加到tbody上
+				$('.table tbody').append(newTr);
+			})
+		});
+	}
+	// 关闭提示框，在点击提示框中的x才调用该函数
+	function closeAlert(){
+		$(this).parents('.alert').remove();
+	}
+
+	$(function(){
+		// 加载所有数据
+		loadData();
+
+		// 批量删除
+		$('#btn_batchDel').click(function(){
+			var url_batchDel = baseURL+'/customer/batchDelete';
+			var ids = $(':checkbox:checked').map(function(index,item){
+				return $(item).val();
+			}).toArray();
+			var data = '';
+			for(index in ids){
+				if(index == 0){
+					data += 'ids='+ids[index]
+				}else{
+					data +='&ids='+ids[index]
+				}
+			}
+			$.post(url_batchDel,data,function(result){
+				console.log(result);
+				loadData();
+			})
+		})
+
+		// 添加或修改数据
+		$('#addCustomer').click(function(){
+			var name = $('#input_realname').val();
+			var phone = $('#input_telephone').val();
+			var password = $('#input_password').val();
+			var pattern_name = /^[a-z]{1,}$/ig;
+			var pattern_phone = /^\d{9,11}$/ig;
+			var pattern_password = /^\d{1,}$/ig;
+			var name_res = pattern_name.test(name);
+			var phone_res = pattern_phone.test(phone);
+			var password_res = pattern_password.test(password);
+			if(name_res && phone_res && password_res){
+				if(EditId){
+					// id存在，即修改
+					var data = {
+						id:EditId,
+						realname:name,
+						telephone:phone,
+						password:password
+					}
+					var url_editCustomer = baseURL+'/customer/saveOrUpdate';
+					$.post(url_editCustomer,data,function(result){
+						console.log(result,'修改');
+						loadData();
+					});
+					// 将id置为空，否则点击修改后再次点击添加，还是修改
+					EditId = '';
+					$('#customerModal').modal('hide');	
+				}else{
+					// id不存在，即添加
+					var data = {
+						realname:name,
+						telephone:phone,
+						password:password
+					}
+					var url_addCustomer = baseURL+'/customer/saveOrUpdate';
+					$.post(url_addCustomer,data,function(result){
+						console.log(result);
+						loadData();
+					});
+					$('#customerModal').modal('hide');	
+				}
+			}else{
+				// 表单验证
+				if(!name_res && !phone_res && !password_res){
+					$('#name_err span').removeClass('name_err');
+					$('#telephone_err span').removeClass('telephone_err');
+					$('#password_err span').removeClass('password_err');
+				}
+				if(!phone_res && !password_res){
+					$('#telephone_err span').removeClass('telephone_err');
+					$('#password_err span').removeClass('password_err');
+				}
+				if(!name_res && !phone_res){
+					$('#name_err span').removeClass('name_err');
+					$('#telephone_err span').removeClass('telephone_err');
+				}
+				if(!name_res && !password_res){
+					$('#name_err span').removeClass('name_err');
+					$('#password_err span').removeClass('password_err');
+				}
+				if(!name_res){
+					$('#name_err span').removeClass('name_err');
+				}
+				if(!phone_res){
+					$('#telephone_err span').removeClass('telephone_err');	
+				}
+				if(!password_res){
+					$('#password_err span').removeClass('password_err');	
+				}
+			}
+
+			
+		})
+		
+		// 显示模态框
+		$('#btn_add').click(function(){
+			$('#customerModal').modal('show');
+			$('#name_err span').addClass('name_err');
+			$('#telephone_err span').addClass('telephone_err');
+			$('#password_err span').addClass('password_err');
+		})
+		// 关闭模态框
+		$('#btn_none').click(function(){
+			$('#customerModal').modal('hide');
+		})
+
+		// 监听模态框的关闭，清空模态框内容
+		$('#customerModal').on('hidden.bs.modal', function(e){
+		  $(this).find('form')[0].reset();
+		})
+
+		// 删除与修改按钮
+		$('.table tbody').on('click','i',function(){
+			switch(this.id){
+				// 修改
+				case 'edit':
+					// 打开模态框
+				 	$('#customerModal').modal('show');
+				 	// 获取当前行的值并放入模态框（不能在此处就发送请求）
+					EditId = $(this).parents('tr').find('td').find('input').val();
+				 	var name = $(this).parents('tr').find('td:nth-child(2)').text();
+				 	var telephone = $(this).parents('tr').find('td:nth-child(3)').text();
+				 	var password = $(this).parents('tr').find('td:nth-child(4)').text();
+				 	$('#input_realname').val(name);
+				 	$('#input_telephone').val(telephone);
+				 	$('#input_password').val(password);
+					break;
+				// 删除
+				case 'del':
+				 	var url_del = baseURL+'/customer/deleteById';
+					var id = $(this).parents('tr').find('input[type=checkbox]').val();
+					var data = {
+						id:id
+					}
+					$.get(url_del,data,function(result){
+						if(result.status === 200){
+							loadData();
+							// 删除并刷新数据后，追加提示框
+							$(`
+								<div class="alert alert-info alert-dismissible" id='mySuccessAlert'>
+									<div>
+										删除成功
+									</div>
+									<button class="close" onclick="closeAlert.call(this)" id='btn_success'>
+										~
+									</button>
+								</div>
+							`).prependTo($('body'));
+							// 延时调用，2s后模拟点击提示框的关闭按钮
+							setTimeout(function(){
+								$('#btn_success').trigger('click');
+							},2000);
+						}else{
+							$(`
+								<div class="alert alert-info alert-dismissible" id='myWarnAlert'>
+									<div>
+										删除失败，接口异常
+									</div>
+									<button class="close" onclick="closeAlert.call(this)" id='btn_warn'>
+										！
+									</button>
+								</div>
+							`).prependTo($('body'));
+							setTimeout(function(){
+								$('#btn_warn').trigger('click')
+							},2000);
+						}
+					});
+					break;
+			}	
+		})	
+	});
+</script>
+
+<style>
+	.btns{
+		margin-bottom: 1em;
+	}
+	.btns button {
+		margin-right: 0.5em;
+	}
+	/*删除成功弹出框*/
+	#mySuccessAlert{
+		width: 200px;
+		position: absolute;
+		right: 5%;
+		top: 8.5%;
+		z-index: 100;
+	}
+	/*删除失败弹出框*/
+	#myWarnAlert{
+		width: 250px;
+		position: absolute;
+		right: 5%;
+		top: 8.5%;
+		z-index: 100;
+	}
+	/*模态框姓名栏*/
+	#name_err{
+		position: relative;
+	}
+	/*表单验证提示——姓名*/
+	.name_err{
+		display: none;
+	}
+	#name_err span{
+		position: absolute;
+		right: 0;
+	}
+	/*模态框电话栏*/
+	#telephone_err{
+		position: relative;
+	}
+	/*表单验证提示——电话*/
+	.telephone_err{
+		display: none;
+	}
+	#telephone_err span{
+		position: absolute;
+		right: 0;
+	}
+	/*模态框密码栏*/
+	#password_err{
+		position: relative;
+	}
+	/*表单验证提示——密码*/
+	.password_err{
+		display: none;
+	}
+	#password_err span{
+		position: absolute;
+		right: 0;
+	}
+</style>
